@@ -1,0 +1,6 @@
+python_dotenv
+requests
+pandas
+pyarrow
+fastparquet
+boto3
