@@ -1,0 +1,146 @@
+version: 2
+
+sources:
+  - name: raw_data
+    database: TFT_DATA
+    schema: RAW
+    description: "Bronze raw ingestion layer directly loaded from S3 into Snowflake."
+    
+    tables:
+      # 1. MATCHES
+      - name: raw_matches
+        description: "Raw match telemetry payloads retrieved from the Riot API."
+        loaded_at_field: loaded_at
+        columns:
+          - name: match_id
+            description: "Primary key identifier for the match (e.g., VN2_123456789)."
+            tests:
+              - unique
+              - not_null
+          - name: game_datetime
+            description: "Epoch millisecond timestamp indicating game completion (Ground Truth)."
+            tests:
+              - not_null
+          - name: game_length
+            description: "Total duration of the match in seconds."
+          - name: tft_set_number
+            description: "The TFT Set number associated with the match."
+          - name: raw_payload
+            description: "Complete raw JSON response from Riot API stored as VARIANT."
+            tests:
+              - not_null
+          - name: ingested_at
+            description: "Timestamp when the ingestion script retrieved the record."
+          - name: loaded_at
+            description: "Snowflake ingestion timestamp via COPY INTO."
+
+      # 2. PLAYERS
+      - name: raw_players
+        description: "Player metadata and summoner identification history."
+        loaded_at_field: loaded_at
+        columns:
+          - name: puuid
+            description: "Unique encrypted Riot PUUID."
+            tests:
+              - unique
+              - not_null
+          - name: riot_id_game_name
+            description: "Riot ID in-game username."
+          - name: riot_id_tagline
+            description: "Riot ID tagline suffix."
+          - name: first_seen_match_id
+            description: "Match ID where this player was first detected."
+          - name: first_seen_match_time
+            description: "Epoch millisecond timestamp of the player's first detected match."
+          - name: last_seen_match_id
+            description: "Most recent match ID recorded for this player."
+          - name: last_seen_match_time
+            description: "Epoch millisecond timestamp of the player's latest match."
+          - name: updated_at
+            description: "Timestamp when the player record was last refreshed."
+          - name: loaded_at
+            description: "Snowflake ingestion timestamp via COPY INTO."
+
+      # 3. CHAMPIONS
+      - name: raw_tft_champions
+        description: "Static champion attributes and balance metrics extracted from CommunityDragon."
+        config:
+           loaded_at_field: loaded_at
+           freshness:
+             warn_after: {count: 1, period: day}
+             error_after: {count: 2, period: day}
+        columns:
+          - name: character_id
+            description: "Technical champion identifier (e.g., TFT12_Ahri)."
+            tests:
+              - not_null
+          - name: name
+            description: "Display name of the champion."
+          - name: api_name
+            description: "Internal API name of the champion."
+          - name: cost
+            description: "Gold tier/cost of the champion unit."
+          - name: set_number
+            description: "The active set number this champion belongs to."
+          - name: mutator
+            description: "Internal set mutator string (e.g., TFTSet12)."
+          - name: raw_payload
+            description: "Complete raw JSON containing stats and ability mechanics for SCD Type 2 tracking."
+          - name: ingested_at
+            description: "Timestamp when the asset was fetched from CommunityDragon."
+          - name: loaded_at
+            description: "Snowflake ingestion timestamp via COPY INTO."
+
+      # 4. ITEMS
+      - name: raw_tft_items
+        description: "Static game items, augments, and consumable metadata from CommunityDragon."
+        config:
+           loaded_at_field: loaded_at
+           freshness:
+             warn_after: {count: 1, period: day}
+             error_after: {count: 2, period: day}
+        columns:
+          - name: item_id
+            description: "Numeric identifier of the item."
+            tests:
+              - not_null
+          - name: api_name
+            description: "Internal API identifier for the item."
+          - name: name
+            description: "Display name of the item."
+          - name: desc
+            description: "Item tooltip description detailing effects and stat buffs."
+          - name: icon_path
+            description: "Relative asset URI to the item icon."
+          - name: raw_payload
+            description: "Complete raw JSON item definition."
+          - name: ingested_at
+            description: "Timestamp when the asset was fetched."
+          - name: loaded_at
+            description: "Snowflake ingestion timestamp via COPY INTO."
+
+      # 5. TRAITS
+      - name: raw_tft_traits
+        description: "Static synergy breakpoints and trait definitions from CommunityDragon."
+        config:
+           loaded_at_field: loaded_at
+           freshness:
+             warn_after: {count: 1, period: day}
+             error_after: {count: 2, period: day}
+        columns:
+          - name: api_name
+            description: "Internal API identifier for the trait (e.g., TFT12_Mage)."
+            tests:
+              - not_null
+          - name: name
+            description: "Display name of the trait synergy."
+          - name: set_number
+            description: "The set number this trait belongs to."
+          - name: mutator
+            description: "Internal set mutator string."
+          - name: raw_payload
+            description: "Complete raw JSON defining tier breakpoints and stat bonuses."
+          - name: ingested_at
+            description: "Timestamp when the asset was fetched."
+          - name: loaded_at
+            description: "Snowflake ingestion timestamp via COPY INTO."
