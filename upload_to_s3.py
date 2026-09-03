@@ -12,16 +12,15 @@ load_dotenv()
 # ==========================================================
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_REGION = os.getenv("AWS_REGION", "ap-southeast-2")
+AWS_REGION = os.getenv("AWS_REGION", "ap-southeast-1")
 BUCKET_NAME = os.getenv("AWS_S3_BUCKET_NAME")
 
 LOCAL_DATA_DIR = "data"
 
 if not BUCKET_NAME:
-    print("[ABORT] AWS_S3_BUCKET_NAME is not set in your .env file.")
+    print("[ABORT] AWS_S3_BUCKET_NAME is not configured in .env.")
     exit(1)
 
-# Initialize S3 Client
 s3_client = boto3.client(
     "s3",
     aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -30,25 +29,33 @@ s3_client = boto3.client(
 )
 
 
-def get_existing_s3_keys(bucket_name):
-    """Fetches all existing object keys in the bucket to prevent redundant uploads."""
-    existing_keys = set()
+def get_existing_s3_metadata(bucket_name: str) -> dict:
+    """
+    Fetches a map of {Key: FileSizeInBytes} for all objects currently in the S3 bucket.
+    Uses pagination to handle arbitrary bucket sizes without memory issues.
+    """
+    s3_objects = {}
     paginator = s3_client.get_paginator("list_objects_v2")
-    
+
     try:
         for page in paginator.paginate(Bucket=bucket_name):
             if "Contents" in page:
                 for obj in page["Contents"]:
-                    existing_keys.add(obj["Key"])
+                    s3_objects[obj["Key"]] = obj["Size"]
     except ClientError as e:
         print(f"[ERROR] Failed to query bucket '{bucket_name}': {e}")
         exit(1)
-        
-    return existing_keys
+
+    return s3_objects
 
 
-def upload_all_files(source_dir, bucket_name):
-    """Scans local data directory and uploads new/updated Parquet files to S3."""
+def sync_local_to_s3(source_dir: str, bucket_name: str):
+    """
+    Synchronizes local Parquet files to S3 Bronze storage.
+    Evaluates both file existence and byte-size consistency:
+      - Match batches: upload once, skip indefinitely.
+      - raw_* tables (players, items, champions): upload only if size changed (diff/delta).
+    """
     if not os.path.exists(source_dir):
         print(f"[ABORT] Local directory '{source_dir}' does not exist.")
         return
@@ -56,37 +63,42 @@ def upload_all_files(source_dir, bucket_name):
     # Find all Parquet files recursively
     local_files = glob.glob(f"{source_dir}/**/*.parquet", recursive=True)
     if not local_files:
-        print(f"[INFO] No Parquet files found in '{source_dir}'.")
+        print(f"[INFO] No Parquet files detected in '{source_dir}'.")
         return
 
-    print(f"Checking existing files in bucket '{bucket_name}'...")
-    existing_s3_keys = get_existing_s3_keys(bucket_name)
+    print(f"Inspecting existing objects in bucket 's3://{bucket_name}'...")
+    existing_s3_objects = get_existing_s3_metadata(bucket_name)
 
     uploaded_count = 0
     skipped_count = 0
 
-    print(f"Found {len(local_files)} local files. Beginning synchronization...\n")
+    print(f"Identified {len(local_files)} local files. Evaluating delta sync...\n")
 
     for file_path in local_files:
-        # Standardize key path format for S3 (replace Windows backslashes)
+        # Standardize key path format for S3 (replace backslashes on Windows)
         s3_key = Path(file_path).as_posix()
+        local_size = os.path.getsize(file_path)
 
-        # Deduplication check: match batches are immutable, dim_players can be overwritten
-        is_dim_table = "dim_players" in s3_key
-        if s3_key in existing_s3_keys and not is_dim_table:
+        # File already exists on S3 with the identical byte size -> Purely untouched, skip
+        if s3_key in existing_s3_objects and existing_s3_objects[s3_key] == local_size:
             skipped_count += 1
             continue
+
+        # Determine log status
+        if s3_key in existing_s3_objects:
+            status = "DELTA_UPDATED"  # Existing file with modified byte size
+        else:
+            status = "NEW_UPLOADED"   # Fresh batch or new entity file
 
         try:
             s3_client.upload_file(file_path, bucket_name, s3_key)
             uploaded_count += 1
-            status = "UPDATED" if is_dim_table and s3_key in existing_s3_keys else "UPLOADED"
-            print(f"[{status}] {file_path} -> s3://{bucket_name}/{s3_key}")
+            print(f"[{status}] {file_path} ({local_size:,} bytes) -> s3://{bucket_name}/{s3_key}")
         except ClientError as e:
             print(f"[FAILED] Could not upload {file_path}: {e}")
 
-    print(f"\n[DONE] Synchronization complete: {uploaded_count} uploaded/updated, {skipped_count} skipped.")
+    print(f"\n[DONE] Pipeline sync complete: {uploaded_count} uploaded/synced, {skipped_count} unchanged (skipped).")
 
 
 if __name__ == "__main__":
-    upload_all_files(LOCAL_DATA_DIR, BUCKET_NAME)
+    sync_local_to_s3(LOCAL_DATA_DIR, BUCKET_NAME)

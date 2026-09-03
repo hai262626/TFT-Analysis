@@ -11,7 +11,7 @@ REGION = "VN2"
 ROUTING = "sea"
 
 MATCHES_DIR = f"data/matches/{ROUTING}"
-OUTPUT_FILE = f"data/player/{REGION}/all_players.parquet"
+OUTPUT_FILE = f"data/player/{REGION}/raw_players.parquet"
 
 parquet_files = glob.glob(f"{MATCHES_DIR}/*.parquet")
 if not parquet_files:
