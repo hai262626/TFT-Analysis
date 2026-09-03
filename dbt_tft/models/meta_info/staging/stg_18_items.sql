@@ -20,14 +20,14 @@ select_appropriate_columns AS (
         raw_payload:isAugment::BOOLEAN                  AS item_is_augment,
         raw_payload:unique::BOOLEAN                     AS item_unique,
         CASE
+            WHEN raw_payload:isAugment::BOOLEAN = TRUE 
+                 OR raw_payload:icon::STRING ILIKE '%augments%'      THEN 'Augment'
+            WHEN raw_payload:icon::STRING ILIKE '%wands%'             THEN 'Wand'
             WHEN raw_payload:apiName::STRING ILIKE '%Artifact%' THEN 'Artifact'
             WHEN raw_payload:apiName::STRING ILIKE '%Emblem%' THEN 'Emblem'
             WHEN raw_payload:apiName::STRING ILIKE '%Radiant%' THEN 'RadiantItem'
             WHEN raw_payload:apiName::STRING ILIKE '%Component%' THEN 'Component'
             WHEN raw_payload:apiName::STRING ILIKE '%Consumable%' THEN 'Consumable'
-            WHEN raw_payload:isAugment::BOOLEAN = TRUE 
-                 OR raw_payload:icon::STRING ILIKE '%augments%'      THEN 'Augment'
-            WHEN raw_payload:icon::STRING ILIKE '%wands%'             THEN 'Wand'
             WHEN raw_payload:icon::STRING ILIKE '%items%'              THEN 'CompleteItem'
             ELSE 'Unknown'
         END                                             AS item_category,
