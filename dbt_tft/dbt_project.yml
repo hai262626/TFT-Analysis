@@ -18,19 +18,37 @@ seed-paths: ["seeds"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
 
-clean-targets:         # directories to be removed by `dbt clean`
+clean-targets:        
   - "target"
   - "dbt_packages"
 
 
-# Configuring models
-# Full documentation: https://docs.getdbt.com/docs/configuring-models
-
-# In this example config, we tell dbt to build all models in the example/
-# directory as views. These settings can be overridden in the individual model
-# files using the `{{ config(...) }}` macro.
 models:
   dbt_tft:
-    # Config indicated by + and applies to all files under models/example/
-    example:
-      +materialized: view
+    seeds:
+      +schema: seeds
+      +materialized: table
+    snapshots:
+      +schema: snapshots
+      +materialized: table
+    models:
+      meta_info:
+        staging:
+          +schema: staging_info
+          +materialized: view
+        intermediate:
+          +schema: int_info
+          +materialized: view
+        marts:
+          +schema: mart_info
+          +materialized: table
+      matches:
+        staging:
+          +schema: staging_matches
+          +materialized: view
+        intermediate:
+          +schema: int_matches
+          +materialized: view
+        marts:
+          +schema: mart_matches
+          +materialized: table

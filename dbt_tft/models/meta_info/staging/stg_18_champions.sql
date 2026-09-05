@@ -1,5 +1,5 @@
 {{config(
-    materialized='table',
+    materialized='view',
     schema='staging_info'
 ) }}
 
@@ -89,5 +89,7 @@ SELECT
     initial_mana,
     max_mana,
     champion_ability,
-    champion_ability_description_cleaned AS champion_ability_description
+    champion_ability_description_cleaned AS champion_ability_description,
+    ingested_at,
+    loaded_at
 FROM clean_description

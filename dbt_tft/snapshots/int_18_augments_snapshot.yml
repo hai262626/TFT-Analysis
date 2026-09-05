@@ -1,0 +1,12 @@
+version: 2
+
+snapshots:
+  - name: int_18_augments_snapshot
+    relation: ref('int_18_augments')
+    config:
+      target_database: TFT_DATA
+      target_schema: snapshots
+      unique_key: augment_id
+      strategy: timestamp
+      updated_at: ingested_at
+      hard_deletes: invalidate

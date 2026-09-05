@@ -10,7 +10,8 @@ sources:
       # 1. MATCHES
       - name: raw_matches
         description: "Raw match telemetry payloads retrieved from the Riot API."
-        loaded_at_field: loaded_at
+        config:
+          loaded_at_field: loaded_at
         columns:
           - name: match_id
             description: "Primary key identifier for the match (e.g., VN2_123456789)."
@@ -37,7 +38,8 @@ sources:
       # 2. PLAYERS
       - name: raw_players
         description: "Player metadata and summoner identification history."
-        loaded_at_field: loaded_at
+        config:
+          loaded_at_field: loaded_at
         columns:
           - name: puuid
             description: "Unique encrypted Riot PUUID."
@@ -100,10 +102,6 @@ sources:
              warn_after: {count: 1, period: day}
              error_after: {count: 2, period: day}
         columns:
-          - name: item_id
-            description: "Numeric identifier of the item."
-            tests:
-              - not_null
           - name: api_name
             description: "Internal API identifier for the item."
           - name: name

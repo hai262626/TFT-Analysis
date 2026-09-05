@@ -1,0 +1,12 @@
+version: 2
+
+snapshots:
+  - name: stg_18_champions_snapshot
+    relation: ref('stg_18_champions')
+    config:
+      target_database: TFT_DATA
+      target_schema: snapshots
+      unique_key: champion_id
+      strategy: timestamp
+      updated_at: ingested_at
+      hard_deletes: invalidate

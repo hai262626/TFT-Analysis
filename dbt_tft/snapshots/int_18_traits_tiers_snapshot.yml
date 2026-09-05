@@ -1,0 +1,12 @@
+version: 2
+
+snapshots:
+  - name: int_18_traits_tiers_snapshot
+    relation: ref('int_18_traits_tiers')
+    config:
+      target_database: TFT_DATA
+      target_schema: snapshots
+      unique_key: tier_id
+      strategy: timestamp
+      updated_at: ingested_at
+      hard_deletes: invalidate

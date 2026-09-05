@@ -1,0 +1,23 @@
+version: 2
+
+seeds:
+  - name: tft_patch_version
+    description: "Seed data for TFT patch versions"
+    config:
+      column_types:
+        patch_release_utc: timestamp_ntz
+        patch_end_utc: timestamp_ntz
+    columns:
+      - name: patch_version
+        description: "The version of the TFT patch"
+        tests:
+          - not_null
+          - unique
+      - name: patch_release_utc
+        description: "The UTC timestamp when the patch was released"
+        tests:
+          - not_null
+      - name: patch_end_utc
+        description: "The UTC timestamp when the patch ended"
+        tests:
+          - not_null
