@@ -1,52 +1,62 @@
-{{config(
+{{ config(
     materialized='view',
     schema='int_matches'
 ) }}
 
 WITH int_participant_units AS (
-    SELECT
-        match_id,
-        game_datetime,
-        puuid,
-        unit_name,
-        sorted_items,
-        num_items,
-        unit_rarity,
-        unit_tier,
-        placement,
-        ingested_at,
-        loaded_at
+    SELECT 
+        *
     FROM {{ ref('int_18_participant_units') }}
 ),
 
-flatten_and_select_appropriate_columns AS (
+flatten_unit_items AS (
     SELECT
         ipu.match_id,
         ipu.game_datetime,
         ipu.puuid,
-        ipu.unit_name,
+        ipu.unit_index,
+        ipu.champion_id,
         ipu.placement,
-        i.value::STRING AS item_id,
+        i.index::INT                    AS item_index,
+        i.value::STRING                 AS equipment_id,
         ipu.ingested_at,
         ipu.loaded_at
     FROM int_participant_units ipu,
     LATERAL FLATTEN(input => ipu.sorted_items) i
 ),
 
-removed_set18_consumable_items_from_wands AS (
+/* 
+  BUSINESS FILTER LOGIC:
+  Inner join with catalog equipments to validate item existence in Set 18 
+  while strictly excluding consumable items/temporary wand effects.
+*/
+filter_valid_equipments AS (
     SELECT
-        fasac.match_id,
-        fasac.game_datetime,
-        fasac.puuid,
-        fasac.unit_name,
-        fasac.placement,
-        fasac.item_id,
-        fasac.ingested_at,
-        fasac.loaded_at
-    FROM flatten_and_select_appropriate_columns fasac
-    LEFT JOIN {{ ref('dim_18_equipments') }} de
-        ON fasac.item_id = de.equipment_id
-    WHERE de.item_category != 'Consumable' OR de.item_category IS NULL
+        fui.match_id,
+        fui.game_datetime,
+        fui.puuid,
+        fui.unit_index,
+        fui.champion_id,
+        fui.placement,
+        fui.item_index,
+        fui.equipment_id,
+        fui.ingested_at,
+        fui.loaded_at
+    FROM flatten_unit_items fui
+    INNER JOIN {{ ref('dim_18_equipments') }} de
+        ON fui.equipment_id = de.equipment_id
+       AND de.item_category != 'Consumable'
 )
 
-SELECT * FROM removed_set18_consumable_items_from_wands
+SELECT
+    match_id,
+    game_datetime,
+    puuid,
+    unit_index,
+    champion_id,
+    placement,
+    item_index,
+    equipment_id,
+    ingested_at,
+    loaded_at
+FROM filter_valid_equipments

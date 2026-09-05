@@ -1,66 +1,67 @@
-{{config(
+{{ config(
     materialized='view',
     schema='int_matches'
 ) }}
 
 WITH int_participants AS (
-    SELECT
-        match_id,
-        game_datetime,
-        puuid,
-        game_name,
-        tagline,
-        companion_id,
-        gold_left,
-        last_round,
-        level,
-        placement,
-        traits,
-        units,
-        win,
-        ingested_at,
-        loaded_at
+    SELECT 
+        *
     FROM {{ ref('int_18_participants') }}
 ),
 
-select_appropriate_columns AS (
+flatten_participant_units AS (
     SELECT
         ip.match_id,
         ip.game_datetime,
         ip.puuid,
         ip.placement,
-        p.value:character_id::STRING AS unit_name,
-        ARRAY_SORT(p.value:itemNames) AS sorted_items,
-        CASE
-            WHEN ARRAY_SIZE(p.value:itemNames) > 3 THEN 3
-            ELSE ARRAY_SIZE(p.value:itemNames)
-        END AS num_items,
-        p.value:rarity::INT AS unit_rarity,
-        p.value:tier::INT AS unit_tier,
+        p.index::INT                                    AS unit_index,
+        p.value:character_id::STRING                    AS champion_id,
+        ARRAY_SORT(p.value:itemNames)                   AS sorted_items,
+        LEAST(ARRAY_SIZE(p.value:itemNames), 3)         AS num_items,
+        p.value:rarity::INT                             AS unit_rarity,
+        p.value:tier::INT                               AS unit_tier,
         ip.ingested_at,
         ip.loaded_at
     FROM int_participants ip,
     LATERAL FLATTEN(input => ip.units) p
-
 ),
 
-removed_set18_orphan_units AS (
+/* 
+  BUSINESS FILTER LOGIC:
+  Inner join with valid Set 18 champions catalog to filter out target dummies, 
+  summoned units (e.g. Tibbers, void spawns), and out-of-scope/orphan entities.
+*/
+filter_valid_champions AS (
     SELECT
-        sapc.match_id,
-        sapc.game_datetime,
-        sapc.puuid,
-        sapc.unit_name,
-        sapc.placement,
-        sapc.sorted_items,
-        sapc.num_items,
-        sapc.unit_rarity,
-        sapc.unit_tier,
-        sapc.ingested_at,
-        sapc.loaded_at
-    FROM select_appropriate_columns sapc
-    LEFT JOIN {{ ref('stg_18_champions') }} sc
-        ON sapc.unit_name = sc.champion_id
-    WHERE sc.champion_id IS NOT NULL
+        fpu.match_id,
+        fpu.game_datetime,
+        fpu.puuid,
+        fpu.placement,
+        fpu.unit_index,
+        fpu.champion_id,
+        fpu.sorted_items,
+        fpu.num_items,
+        fpu.unit_rarity,
+        fpu.unit_tier,
+        fpu.ingested_at,
+        fpu.loaded_at
+    FROM flatten_participant_units fpu
+    INNER JOIN {{ ref('stg_18_champions') }} sc
+        ON fpu.champion_id = sc.champion_id
 )
 
-SELECT * FROM removed_set18_orphan_units
+SELECT
+    match_id,
+    game_datetime,
+    puuid,
+    placement,
+    unit_index,
+    champion_id,
+    sorted_items,
+    num_items,
+    unit_rarity,
+    unit_tier,
+    ingested_at,
+    loaded_at
+FROM filter_valid_champions

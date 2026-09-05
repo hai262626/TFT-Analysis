@@ -1,24 +1,16 @@
 {{ config(
     materialized='incremental',
     schema='mart_matches',
-    unique_key='match_id',
+    unique_key=['match_id', 'puuid', 'champion_id', 'unit_tier'],
     incremental_strategy='delete+insert',
     on_schema_change='sync_all_columns'
-)}}
+) }}
 
 WITH int_18_participant_units AS (
     SELECT
-        match_id,
-        game_datetime,
-        puuid,
-        unit_name,
-        placement,
-        num_items,
-        unit_rarity,
-        unit_tier,
-        ingested_at,
-        loaded_at
+        *
     FROM {{ ref('int_18_participant_units') }}
+
     {% if is_incremental() %}
         WHERE ingested_at > (
             SELECT DATEADD(day, -3, MAX(target.ingested_at)) 
@@ -27,34 +19,74 @@ WITH int_18_participant_units AS (
     {% endif %}
 ),
 
-add_patch_version AS (
+deduplicate_participant_units AS (
     SELECT
-        i18pu.*,
-        COALESCE(p.patch_version, 'Unknown') AS patch_version
-    FROM int_18_participant_units i18pu
-    LEFT JOIN  {{ ref('tft_patch_version') }} p 
-        ON i18pu.game_datetime >= p.patch_release_utc
-        AND i18pu.game_datetime < p.patch_end_utc
+        *
+    FROM int_18_participant_units
+    /* 
+      BUSINESS FILTER LOGIC:
+      Guarantees uniqueness per unit instance per player in a match 
+      across incremental ingestion lookback windows.
+    */
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY match_id, puuid, champion_id, unit_tier 
+        ORDER BY ingested_at DESC, loaded_at DESC
+    ) = 1
 ),
 
-hash_unit_name AS (
+add_patch_version AS (
     SELECT
-        *,
-        md5(unit_name) AS unit_sk
-    FROM add_patch_version
+        dpu.*,
+        COALESCE(p.patch_version, 'Unknown') AS patch_version
+    FROM deduplicate_participant_units dpu
+    /* 
+      BUSINESS JOIN LOGIC:
+      Maps each participant unit record to the active game patch version 
+      based on the match starting timestamp (game_datetime).
+    */
+    LEFT JOIN {{ ref('tft_patch_version') }} p 
+        ON dpu.game_datetime >= p.patch_release_utc
+        AND dpu.game_datetime < p.patch_end_utc
+),
+
+join_champions_dimension AS (
+    SELECT
+        apv.match_id,
+        apv.game_datetime,
+        apv.puuid,
+        apv.placement,
+        COALESCE(dc.champion_sk, MD5(apv.champion_id))           AS champion_sk,
+        COALESCE(dc.champion_version_sk, 'Unknown')              AS champion_version_sk,
+        apv.champion_id,
+        apv.unit_tier,
+        apv.unit_rarity,
+        apv.num_items,
+        apv.patch_version,
+        apv.ingested_at,
+        apv.loaded_at
+    FROM add_patch_version apv
+    /* 
+      BUSINESS JOIN LOGIC:
+      Enriches unit records with versioned surrogate keys from the Champions dimension 
+      matching the specific game patch version.
+    */
+    LEFT JOIN {{ ref('dim_18_champions') }} dc
+        ON apv.champion_id = dc.champion_id
+        AND apv.patch_version = dc.patch_version
 )
 
 SELECT 
     match_id,
     game_datetime,
     puuid,
-    unit_name,
-    unit_sk,
     placement,
-    num_items,
-    unit_rarity,
+    champion_version_sk,
+    champion_sk,
+    champion_id,
     unit_tier,
+    unit_rarity,
+    num_items,
     patch_version,
     ingested_at,
     loaded_at
-FROM hash_unit_name
+FROM join_champions_dimension

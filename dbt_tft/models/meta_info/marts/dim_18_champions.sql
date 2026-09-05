@@ -27,7 +27,7 @@ WITH snapshot_champions AS (
         ingested_at,
         loaded_at,
         dbt_valid_from,
-        COALESCE(dbt_valid_to, '9999-12-31 23:59:59.999999') AS dbt_valid_to
+        COALESCE(dbt_valid_to, '9999-12-31 23:59:59.999999'::TIMESTAMP_NTZ) AS dbt_valid_to
     FROM {{ ref('stg_18_champions_snapshot') }}
 ),
 
@@ -36,21 +36,28 @@ add_patch_version AS (
         sc.*,
         COALESCE(p.patch_version, 'Unknown') AS patch_version
     FROM snapshot_champions sc
-    LEFT JOIN  {{ ref('tft_patch_version') }} p 
+    /* 
+      BUSINESS JOIN LOGIC:
+      Maps each snapshot version of a champion's base stats and traits to its corresponding 
+      TFT game patch release window based on when the snapshot record became active (dbt_valid_from).
+    */
+    LEFT JOIN {{ ref('tft_patch_version') }} p 
         ON sc.dbt_valid_from >= p.patch_release_utc
         AND sc.dbt_valid_from < p.patch_end_utc
 ),
 
-hashing_champion_id AS (
+hashing_champion_keys AS (
     SELECT
         *,
-        MD5(champion_id) AS champion_sk
+        md5(CONCAT(champion_id, '_', dbt_valid_from)) AS champion_version_sk,
+        md5(champion_id)                              AS champion_sk
     FROM add_patch_version
 )
 
 SELECT
-    set_number,
+    champion_version_sk,
     champion_sk,
+    set_number,
     champion_id,
     champion_name,
     cost,
@@ -69,7 +76,9 @@ SELECT
     max_mana,
     champion_ability,
     champion_ability_description,
+    patch_version,
     dbt_valid_from,
     dbt_valid_to,
-    patch_version
-FROM hashing_champion_id
+    ingested_at,
+    loaded_at
+FROM hashing_champion_keys
