@@ -17,11 +17,18 @@ WITH snapshot_augments AS (
     FROM {{ ref('int_18_augments_snapshot') }}
 ),
 
+take_associated_trait AS (
+    SELECT
+        sa.*,
+        sa.augment_associated_traits[0] AS augment_associated_trait
+    FROM snapshot_augments sa
+),
+
 add_patch_version AS (
     SELECT
         a.*,
         COALESCE(p.patch_version, 'Unknown') AS patch_version
-    FROM snapshot_augments a
+    FROM take_associated_trait a
     /* 
       BUSINESS JOIN LOGIC:
       Maps each snapshot version of an augment to its corresponding TFT game patch release window 
@@ -47,7 +54,7 @@ SELECT
     augment_name,
     augment_description,
     augment_effects,
-    augment_associated_traits,
+    augment_associated_trait,
     patch_version,
     dbt_valid_from,
     dbt_valid_to,

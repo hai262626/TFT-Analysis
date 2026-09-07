@@ -24,13 +24,20 @@ selected_appropriate_columns AS (
       isolating them from standard champion equipments and augments.
     */
     WHERE item_category = 'Wand'
+),
+
+resolve_wand_effects AS (
+    SELECT
+        *,
+        resolve_riot_template_effects(wand_description, wand_effects) AS wand_clean_effects
+    FROM selected_appropriate_columns
 )
 
 SELECT
     wand_id,
     wand_name,
     wand_description,
-    wand_effects,
+    wand_clean_effects AS wand_effects,
     ingested_at,
     loaded_at
-FROM selected_appropriate_columns
+FROM resolve_wand_effects

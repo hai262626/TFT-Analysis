@@ -1,0 +1,68 @@
+version: 2
+
+models:
+  - name: stg_18_matches
+    description: "Set 18 match metadata and semi-structured participant payloads from Riot API."
+    columns:
+      - name: set_number
+        data_tests:
+          - not_null
+      - name: match_id
+        data_tests:
+          - not_null
+          - unique
+      - name: participants
+        data_tests:
+          - not_null
+      - name: game_datetime
+        data_tests:
+          - not_null
+      - name: game_length
+        data_tests:
+          - not_null
+      - name: game_version
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: participants_info
+        data_tests:
+          - not_null
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
+
+  - name: stg_18_players
+    description: "Player identity and match activity metadata normalized from raw player records."
+    columns:
+      - name: puuid
+        data_tests:
+          - not_null
+          - unique
+      - name: game_name
+      - name: tagline
+      - name: full_riot_id
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: first_seen_match_id
+        data_tests: &player_warn_tests
+          - not_null:
+              config:
+                severity: warn
+      - name: first_seen_match_time
+        data_tests: *player_warn_tests
+      - name: last_seen_match_id
+        data_tests: *player_warn_tests
+      - name: last_seen_match_time
+        data_tests: *player_warn_tests
+      - name: updated_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null

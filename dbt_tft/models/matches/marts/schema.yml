@@ -1,0 +1,260 @@
+version: 2
+
+models:
+  - name: dim_18_players
+    description: "Latest deduplicated player profile dimension."
+    columns:
+      - name: puuid
+        data_tests:
+          - not_null
+          - unique
+      - name: game_name
+      - name: tagline
+      - name: full_riot_id
+      - name: first_seen_match_id
+      - name: first_seen_match_time
+      - name: last_seen_match_id
+      - name: last_seen_match_time
+      - name: updated_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
+
+  - name: fct_18_matches_info
+    description: "Incremental match-level fact table enriched with patch version."
+    columns:
+      - name: set_number
+        data_tests:
+          - not_null
+      - name: match_id
+        data_tests:
+          - not_null
+          - unique
+      - name: game_datetime
+        data_tests:
+          - not_null
+      - name: game_length
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
+
+  - name: fct_18_participants
+    description: "Incremental match participant fact table at match and player grain."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - match_id
+              - puuid
+    columns:
+      - name: match_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_18_matches_info')
+                field: match_id
+      - name: game_datetime
+        data_tests:
+          - not_null
+      - name: puuid
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_18_players')
+                field: puuid
+      - name: game_name
+      - name: tagline
+      - name: companion_id
+      - name: gold_left
+      - name: last_round
+      - name: level
+      - name: placement
+        data_tests:
+          - not_null
+      - name: traits
+      - name: units
+      - name: win
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
+
+  - name: fct_18_participant_items
+    description: "Incremental participant item fact table enriched with champion and equipment keys."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - match_id
+              - puuid
+              - unit_index
+              - item_index
+    columns:
+      - name: match_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_18_matches_info')
+                field: match_id
+      - name: game_datetime
+        data_tests:
+          - not_null
+      - name: puuid
+        data_tests:
+          - not_null
+      - name: placement
+      - name: unit_index
+        data_tests:
+          - not_null
+      - name: champion_version_sk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_18_champions')
+                field: champion_version_sk
+      - name: champion_sk
+      - name: champion_id
+      - name: item_index
+        data_tests:
+          - not_null
+      - name: equipment_version_sk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_18_equipments')
+                field: equipment_version_sk
+      - name: equipment_sk
+      - name: equipment_id
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
+
+  - name: fct_18_partcipant_units
+    description: "Incremental participant unit fact table enriched with champion keys."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - match_id
+              - puuid
+              - unit_index
+    columns:
+      - name: match_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_18_matches_info')
+                field: match_id
+      - name: game_datetime
+        data_tests:
+          - not_null
+      - name: puuid
+        data_tests:
+          - not_null
+      - name: placement
+      - name: unit_index
+        data_tests:
+          - not_null
+      - name: champion_version_sk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_18_champions')
+                field: champion_version_sk
+      - name: champion_sk
+      - name: champion_id
+      - name: unit_tier
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              arguments:
+                at_least: 0.99
+      - name: unit_rarity
+      - name: num_items
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
+
+  - name: fct_18_participant_traits
+    description: "Incremental participant trait fact table enriched with trait and tier keys."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - match_id
+              - puuid
+              - trait_id
+    columns:
+      - name: match_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_18_matches_info')
+                field: match_id
+      - name: game_datetime
+        data_tests:
+          - not_null
+      - name: puuid
+        data_tests:
+          - not_null
+      - name: placement
+      - name: trait_sk
+      - name: trait_id
+      - name: tier_sk
+      - name: tier_id
+      - name: tier_version_sk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_18_traits_tiers')
+                field: tier_version_sk
+      - name: tier_current
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              arguments:
+                at_least: 0.95
+      - name: tier_total
+      - name: num_units
+      - name: style
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null

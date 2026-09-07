@@ -9,6 +9,7 @@ WITH int_participant_units AS (
     FROM {{ ref('int_18_participant_units') }}
 ),
 
+
 flatten_unit_items AS (
     SELECT
         ipu.match_id,
@@ -46,6 +47,7 @@ filter_valid_equipments AS (
     INNER JOIN {{ ref('dim_18_equipments') }} de
         ON fui.equipment_id = de.equipment_id
        AND de.item_category != 'Consumable'
+    WHERE fui.equipment_id NOT LIKE '%Potion%'
 )
 
 SELECT

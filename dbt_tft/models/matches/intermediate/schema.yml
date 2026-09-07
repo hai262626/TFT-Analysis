@@ -1,0 +1,253 @@
+version: 2
+
+models:
+  - name: int_18_matches_info
+    description: "Relational match-level projection for Set 18."
+    data_tests:
+      - dbt_utils.expression_is_true:
+          expression: "game_length > 0 and game_length <= 3600"
+    columns:
+      - name: set_number
+      - name: match_id
+        data_tests:
+          - not_null
+          - unique
+      - name: game_datetime
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.99
+      - name: game_length
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.98
+      - name: game_version
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.95
+      - name: ingested_at
+      - name: loaded_at
+
+  - name: int_18_participants
+    description: "One row per participant in a Set 18 match, retaining nested units and traits."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - match_id
+            - puuid
+      - dbt_utils.expression_is_true:
+          expression: "gold_left >= 0 and gold_left <= 350"
+          config:
+            severity: warn
+      - dbt_utils.expression_is_true:
+          expression: "last_round >= 1 and last_round <= 50"
+      - dbt_utils.expression_is_true:
+          expression: "level >= 1 and level <= 11"
+      - dbt_utils.expression_is_true:
+          expression: "placement >= 1 and placement <= 8"
+    columns:
+      - name: match_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('int_18_matches_info')
+              field: match_id
+      - name: game_datetime
+      - name: puuid
+        data_tests:
+          - not_null
+      - name: game_name
+      - name: tagline
+      - name: full_riot_id
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.95
+      - name: companion_id
+      - name: gold_left
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.95
+      - name: last_round
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.95
+      - name: level
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.98
+      - name: placement
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.99
+      - name: win
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.99
+          - accepted_values:
+              arguments:
+                values: [0, 1, true, false]
+      - name: traits
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.98
+      - name: units
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.98
+      - name: ingested_at
+      - name: loaded_at
+
+  - name: int_18_participant_items
+    description: "One row per item equipped by a participant unit."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - match_id
+            - puuid
+            - unit_index
+            - item_index
+      - dbt_utils.expression_is_true:
+          expression: "unit_index >= 0"
+      - dbt_utils.expression_is_true:
+          expression: "placement >= 1 and placement <= 8"
+      - dbt_utils.expression_is_true:
+          expression: "item_index >= 0 and item_index <= 2"
+    columns:
+      - name: match_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('int_18_matches_info')
+              field: match_id
+      - name: game_datetime
+      - name: puuid
+        data_tests:
+          - not_null
+      - name: unit_index
+        data_tests:
+          - not_null
+      - name: champion_id
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.99
+      - name: placement
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.99
+      - name: item_index
+        data_tests:
+          - not_null
+      - name: equipment_id
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.99
+      - name: ingested_at
+      - name: loaded_at
+
+  - name: int_18_participant_traits
+    description: "One row per active trait for a participant."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - match_id
+            - puuid
+            - trait_id
+      - dbt_utils.expression_is_true:
+          expression: "placement >= 1 and placement <= 8"
+      - dbt_utils.expression_is_true:
+          expression: "num_units >= 0 and num_units <= 15"
+      - dbt_utils.expression_is_true:
+          expression: "style >= 0 and style <= 6"
+      - dbt_utils.expression_is_true:
+          expression: "tier_current >= 0 and tier_current <= 5"
+      - dbt_utils.expression_is_true:
+          expression: "tier_total >= 1 and tier_total <= 5"
+    columns:
+      - name: match_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('int_18_matches_info')
+              field: match_id
+      - name: game_datetime
+      - name: puuid
+        data_tests:
+          - not_null
+      - name: placement
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.99
+      - name: trait_id
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.99
+      - name: num_units
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.98
+      - name: style
+      - name: tier_current
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.95
+      - name: tier_total
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.95
+      - name: ingested_at
+      - name: loaded_at
+
+  - name: int_18_participant_units
+    description: "One row per unit deployed by a participant."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - match_id
+            - puuid
+            - unit_index
+      - dbt_utils.expression_is_true:
+          expression: "placement >= 1 and placement <= 8"
+      - dbt_utils.expression_is_true:
+          expression: "unit_index >= 0"
+      - dbt_utils.expression_is_true:
+          expression: "num_items >= 0 and num_items <= 3"
+      - dbt_utils.expression_is_true:
+          expression: "unit_rarity >= 0 and unit_rarity <= 4"
+      - dbt_utils.expression_is_true:
+          expression: "unit_tier >= 1 and unit_tier <= 4"
+    columns:
+      - name: match_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('int_18_matches_info')
+              field: match_id
+      - name: game_datetime
+      - name: puuid
+        data_tests:
+          - not_null
+      - name: placement
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.99
+      - name: unit_index
+        data_tests:
+          - not_null
+      - name: champion_id
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.99
+      - name: sorted_items
+      - name: num_items
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.99
+      - name: unit_rarity
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.95
+      - name: unit_tier
+        data_tests:
+          - dbt_utils.not_null_proportion:
+              at_least: 0.99
+      - name: ingested_at
+      - name: loaded_at

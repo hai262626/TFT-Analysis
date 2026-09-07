@@ -1,0 +1,320 @@
+version: 2
+
+models:
+  - name: dim_18_augments
+    description: "SCD2 augment dimension enriched with patch and surrogate keys."
+    columns:
+      - name: augment_version_sk
+        data_tests:
+          - not_null
+          - unique
+      - name: augment_sk
+        data_tests:
+          - not_null
+      - name: augment_id
+        data_tests:
+          - not_null
+      - name: augment_name
+      - name: augment_description
+      - name: augment_effects
+      - name: augment_associated_trait
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: dbt_valid_from
+        data_tests:
+          - not_null
+      - name: dbt_valid_to
+        data_tests:
+          - not_null
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
+
+  - name: dim_18_augment_effects
+    description: "Flattened numeric effects for each augment version."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - augment_version_sk
+              - augment_effect_key
+    columns:
+      - name: augment_version_sk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_18_augments')
+                field: augment_version_sk
+      - name: augment_sk
+      - name: augment_id
+      - name: augment_name
+      - name: augment_description
+      - name: augment_effect_key
+        data_tests:
+          - not_null
+      - name: augment_effect_value
+      - name: augment_associated_trait
+      - name: patch_version
+      - name: ingested_at
+      - name: loaded_at
+      - name: dbt_valid_from
+      - name: dbt_valid_to
+
+  - name: dim_18_champions
+    description: "SCD2 champion dimension enriched with patch and surrogate keys."
+    columns:
+      - name: champion_version_sk
+        data_tests:
+          - not_null
+          - unique
+      - name: champion_sk
+        data_tests:
+          - not_null
+      - name: set_number
+      - name: champion_id
+        data_tests:
+          - not_null
+      - name: champion_name
+      - name: cost
+      - name: first_trait
+      - name: second_trait
+      - name: third_trait
+      - name: base_hp
+      - name: base_armor
+      - name: base_magic_resist
+      - name: base_attack_damage
+      - name: base_attack_speed
+      - name: crit_chance
+      - name: crit_multiplier
+      - name: attack_range
+      - name: initial_mana
+      - name: max_mana
+      - name: champion_ability
+      - name: champion_ability_description
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: dbt_valid_from
+        data_tests:
+          - not_null
+      - name: dbt_valid_to
+        data_tests:
+          - not_null
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
+
+  - name: dim_18_equipments
+    description: "SCD2 equipment dimension enriched with patch and surrogate keys."
+    columns:
+      - name: equipment_version_sk
+        data_tests:
+          - not_null
+          - unique
+      - name: equipment_sk
+        data_tests:
+          - not_null
+      - name: equipment_id
+        data_tests:
+          - not_null
+      - name: equipment_name
+      - name: item_category
+      - name: component_1
+      - name: component_1_name
+      - name: component_2
+      - name: component_2_name
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: dbt_valid_from
+        data_tests:
+          - not_null
+      - name: dbt_valid_to
+        data_tests:
+          - not_null
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
+
+  - name: dim_18_traits
+    description: "SCD2 trait dimension enriched with patch and surrogate keys."
+    columns:
+      - name: trait_version_sk
+        data_tests:
+          - not_null
+          - unique
+      - name: trait_sk
+        data_tests:
+          - not_null
+      - name: set_number
+      - name: trait_id
+        data_tests:
+          - not_null
+      - name: trait_name
+      - name: trait_description
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: dbt_valid_from
+        data_tests:
+          - not_null
+      - name: dbt_valid_to
+        data_tests:
+          - not_null
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
+
+  - name: dim_18_traits_tiers
+    description: "SCD2 trait tier dimension enriched with trait and patch keys."
+    columns:
+      - name: tier_version_sk
+        data_tests:
+          - not_null
+          - unique
+      - name: tier_sk
+        data_tests:
+          - not_null
+      - name: tier_id
+        data_tests:
+          - not_null
+      - name: trait_version_sk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_18_traits')
+                field: trait_version_sk
+      - name: trait_sk
+      - name: trait_id
+      - name: tier_level
+      - name: min_units
+      - name: max_units
+      - name: style
+      - name: tier_variables
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: dbt_valid_from
+        data_tests:
+          - not_null
+      - name: dbt_valid_to
+        data_tests:
+          - not_null
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
+
+  - name: dim_18_traits_effects
+    description: "Flattened numeric variables for each trait tier version."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - tier_version_sk
+              - tier_variable_key
+    columns:
+      - name: tier_version_sk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_18_traits_tiers')
+                field: tier_version_sk
+      - name: tier_sk
+      - name: tier_id
+      - name: trait_version_sk
+      - name: trait_sk
+      - name: trait_id
+      - name: tier_level
+      - name: min_units
+      - name: max_units
+      - name: style
+      - name: tier_variable_key
+        data_tests:
+          - not_null
+      - name: tier_variable_value
+      - name: patch_version
+      - name: ingested_at
+      - name: loaded_at
+      - name: dbt_valid_from
+      - name: dbt_valid_to
+
+  - name: dim_18_wands
+    description: "SCD2 wand dimension enriched with patch and surrogate keys."
+    columns:
+      - name: wand_version_sk
+        data_tests:
+          - not_null
+          - unique
+      - name: wand_sk
+        data_tests:
+          - not_null
+      - name: wand_id
+        data_tests:
+          - not_null
+      - name: wand_name
+      - name: wand_description
+      - name: wand_effects
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: dbt_valid_from
+        data_tests:
+          - not_null
+      - name: dbt_valid_to
+        data_tests:
+          - not_null
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
+
+  - name: dim_18_wand_effects
+    description: "Flattened numeric effects for each wand version."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - wand_version_sk
+              - wand_effect_key
+    columns:
+      - name: wand_version_sk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_18_wands')
+                field: wand_version_sk
+      - name: wand_sk
+      - name: wand_id
+      - name: wand_name
+      - name: wand_description
+      - name: wand_effect_key
+        data_tests:
+          - not_null
+      - name: wand_effect_value
+      - name: patch_version
+      - name: ingested_at
+      - name: loaded_at
+      - name: dbt_valid_from
+      - name: dbt_valid_to

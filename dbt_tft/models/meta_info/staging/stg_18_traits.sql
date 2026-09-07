@@ -50,6 +50,13 @@ clean_description AS (
             )
         ) AS trait_description
     FROM select_appropriate_columns
+),
+
+resolve_trait_effects AS (
+    SELECT
+        *,
+        resolve_trait_effects(trait_description, trait_effects) AS trait_clean_effects
+    FROM clean_description
 )
 
 SELECT
@@ -57,7 +64,7 @@ SELECT
     trait_id,
     trait_name,
     trait_description,
-    trait_effects,
+    trait_clean_effects AS trait_effects,
     ingested_at,
     loaded_at
-FROM clean_description
+FROM resolve_trait_effects

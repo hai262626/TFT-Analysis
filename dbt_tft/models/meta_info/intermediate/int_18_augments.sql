@@ -25,14 +25,21 @@ selected_appropriate_columns AS (
       separating game-modifying enhancements from equippable items and special drop mechanics.
     */
     WHERE item_category = 'Augment'
+),
+
+resolve_augment_effects AS (
+    SELECT
+        *,
+        resolve_riot_template_effects(augment_description, augment_effects) AS augment_clean_effects
+    FROM selected_appropriate_columns
 )
 
 SELECT
     augment_id,
     augment_name,
     augment_description,
-    augment_effects,
+    augment_clean_effects AS augment_effects,
     augment_associated_traits,
     ingested_at,
     loaded_at
-FROM selected_appropriate_columns
+FROM resolve_augment_effects

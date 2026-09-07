@@ -1,0 +1,88 @@
+version: 2
+
+models:
+  - name: int_18_augments
+    description: "Normalized Set 18 augment metadata derived from staged items."
+    columns:
+      - name: augment_id
+        data_tests:
+          - not_null
+          - unique
+      - name: augment_name
+      - name: augment_description
+      - name: augment_effects
+      - name: augment_associated_traits
+      - name: ingested_at
+      - name: loaded_at
+
+  - name: int_18_equipments
+    description: "Normalized equipment metadata with component identifiers and names."
+    columns:
+      - name: equipment_id
+        data_tests:
+          - not_null
+          - unique
+      - name: equipment_name
+      - name: item_category
+      - name: component_1
+      - name: component_1_name
+      - name: component_2
+      - name: component_2_name
+      - name: ingested_at
+      - name: loaded_at
+
+  - name: int_18_traits
+    description: "Relational projection of staged Set 18 traits."
+    columns:
+      - name: set_number
+      - name: trait_id
+        data_tests:
+          - not_null
+          - unique
+      - name: trait_name
+      - name: trait_description
+      - name: ingested_at
+      - name: loaded_at
+
+  - name: int_18_traits_tiers
+    description: "One row per trait tier, including a default tier for traits without configured effects."
+    data_tests:
+      # Test quan trọng nhất: Chặn rách grain / duplicate dòng sau khi FLATTEN mốc kích hoạt
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - trait_id
+            - tier_id
+    columns:
+      - name: trait_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('int_18_traits')
+              field: trait_id
+      - name: tier_id
+        data_tests:
+          - not_null
+      - name: tier_level
+      - name: min_units
+        data_tests:
+          - not_null
+      - name: max_units
+      - name: style
+      - name: tier_variables
+      - name: ingested_at
+      - name: loaded_at
+
+  - name: int_18_wands
+    description: "Normalized Set 18 wand metadata with resolved effect values."
+    columns:
+      - name: wand_id
+        data_tests:
+          - not_null
+          - unique
+      - name: wand_name
+      - name: wand_description
+      - name: wand_effects
+        data_tests:
+          - not_null  # Bắt buộc giữ: Xác nhận UDF Python không trả ra null object
+      - name: ingested_at
+      - name: loaded_at

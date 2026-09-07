@@ -1,0 +1,118 @@
+version: 2
+
+models:
+  - name: stg_18_champions
+    description: "Set 18 champion attributes, stats, traits, and cleaned ability text."
+    columns:
+      - name: set_number
+      - name: champion_id
+        data_tests:
+          - not_null
+          - unique
+      - name: champion_name
+        data_tests:
+          - not_null
+      - name: cost
+        data_tests:
+          - not_null
+      - name: first_trait
+        data_tests:
+          - not_null
+      - name: second_trait
+      - name: third_trait
+      - name: base_hp
+        data_tests: &stat_warn_tests
+          - not_null:
+              config:
+                severity: warn
+                warn_if: "> 0"
+                error_if: "> 10"
+      - name: base_armor
+        data_tests: *stat_warn_tests
+      - name: base_magic_resist
+        data_tests: *stat_warn_tests
+      - name: base_attack_damage
+        data_tests: *stat_warn_tests
+      - name: base_attack_speed
+        data_tests: *stat_warn_tests
+      - name: crit_chance
+        data_tests: *stat_warn_tests
+      - name: crit_multiplier
+        data_tests: *stat_warn_tests
+      - name: attack_range
+        data_tests: *stat_warn_tests
+      - name: initial_mana
+        data_tests: *stat_warn_tests
+      - name: max_mana
+        data_tests: *stat_warn_tests
+      - name: champion_ability
+        data_tests: *stat_warn_tests
+      - name: champion_ability_description
+        data_tests: *stat_warn_tests
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
+
+  - name: stg_18_items
+    description: "Set 18 item payloads classified into equipment, augment, wand, and related categories."
+    columns:
+      - name: item_id
+        data_tests:
+          - not_null
+          - unique
+      - name: item_name
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                warn_if: "> 0"
+                error_if: "> 10"
+      - name: item_is_augment
+        data_tests:
+          - not_null
+      - name: item_unique
+      - name: item_category
+        data_tests:
+          - not_null
+      - name: item_description
+      - name: icon_path
+        data_tests:
+          - not_null
+      - name: item_effects
+      - name: item_composition
+      - name: item_associated_traits
+      - name: item_incompatible_traits
+      - name: item_from
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
+
+  - name: stg_18_traits
+    description: "Set 18 trait definitions with cleaned descriptions and resolved effect values."
+    columns:
+      - name: set_number
+      - name: trait_id
+        data_tests:
+          - not_null
+          - unique
+      - name: trait_name
+        data_tests:
+          - not_null
+      - name: trait_description
+        data_tests:
+          - not_null
+      - name: trait_effects
+        data_tests:
+          - not_null
+      - name: ingested_at
+        data_tests:
+          - not_null
+      - name: loaded_at
+        data_tests:
+          - not_null
