@@ -5,7 +5,7 @@ models:
     description: "Relational match-level projection for Set 18."
     data_tests:
       - dbt_utils.expression_is_true:
-          expression: "game_length > 0 and game_length <= 3600"
+          expression: "game_length IS NULL OR (game_length > 0 and game_length <= 3600)"
     columns:
       - name: set_number
       - name: match_id
@@ -35,15 +35,20 @@ models:
             - match_id
             - puuid
       - dbt_utils.expression_is_true:
-          expression: "gold_left >= 0 and gold_left <= 350"
+          expression: "gold_left IS NULL OR (gold_left >= 0 and gold_left <= 350)"
           config:
             severity: warn
       - dbt_utils.expression_is_true:
-          expression: "last_round >= 1 and last_round <= 50"
+          expression: "last_round IS NULL OR (last_round >= 1 and last_round <= 50)"
       - dbt_utils.expression_is_true:
-          expression: "level >= 1 and level <= 11"
+          expression: "level IS NULL OR (level >= 1 and level <= 11)"
       - dbt_utils.expression_is_true:
-          expression: "placement >= 1 and placement <= 8"
+          expression: "placement IS NULL OR (placement >= 1 and placement <= 8)"
+      - dbt_utils.expression_is_true:
+          expression: "array_contains(to_variant(puuid), participants)"
+          config:
+            where: "puuid IS NOT NULL AND participants IS NOT NULL"
+            severity: error
     columns:
       - name: match_id
         data_tests:
@@ -108,7 +113,7 @@ models:
       - dbt_utils.expression_is_true:
           expression: "unit_index >= 0"
       - dbt_utils.expression_is_true:
-          expression: "placement >= 1 and placement <= 8"
+          expression: "placement IS NULL OR (placement >= 1 and placement <= 8)"
       - dbt_utils.expression_is_true:
           expression: "item_index >= 0 and item_index <= 2"
     columns:
@@ -152,15 +157,15 @@ models:
             - puuid
             - trait_id
       - dbt_utils.expression_is_true:
-          expression: "placement >= 1 and placement <= 8"
+          expression: "placement IS NULL OR (placement >= 1 and placement <= 8)"
       - dbt_utils.expression_is_true:
-          expression: "num_units >= 0 and num_units <= 15"
+          expression: "num_units IS NULL OR (num_units >= 0 and num_units <= 15)"
       - dbt_utils.expression_is_true:
-          expression: "style >= 0 and style <= 6"
+          expression: "style IS NULL OR (style >= 0 and style <= 6)"
       - dbt_utils.expression_is_true:
-          expression: "tier_current >= 0 and tier_current <= 5"
+          expression: "tier_current IS NULL OR (tier_current >= 0 and tier_current <= 5)"
       - dbt_utils.expression_is_true:
-          expression: "tier_total >= 1 and tier_total <= 5"
+          expression: "tier_total IS NULL OR (tier_total >= 1 and tier_total <= 5)"
     columns:
       - name: match_id
         data_tests:
@@ -205,15 +210,15 @@ models:
             - puuid
             - unit_index
       - dbt_utils.expression_is_true:
-          expression: "placement >= 1 and placement <= 8"
+          expression: "placement IS NULL OR (placement >= 1 and placement <= 8)"
       - dbt_utils.expression_is_true:
           expression: "unit_index >= 0"
       - dbt_utils.expression_is_true:
-          expression: "num_items >= 0 and num_items <= 3"
+          expression: "num_items IS NULL OR (num_items >= 0 and num_items <= 3)"
       - dbt_utils.expression_is_true:
-          expression: "unit_rarity >= 0 and unit_rarity <= 4"
+          expression: "unit_rarity IS NULL OR (unit_rarity >= 0 and unit_rarity <= 4)"
       - dbt_utils.expression_is_true:
-          expression: "unit_tier >= 1 and unit_tier <= 4"
+          expression: "unit_tier IS NULL OR (unit_tier >= 1 and unit_tier <= 4)"
     columns:
       - name: match_id
         data_tests:

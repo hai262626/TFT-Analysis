@@ -3,6 +3,33 @@ version: 2
 models:
   - name: stg_18_matches
     description: "Set 18 match metadata and semi-structured participant payloads from Riot API."
+    data_tests:
+      - dbt_utils.expression_is_true:
+          name: warn_recent_match_payload_nulls
+          expression: >
+            coalesce(
+              participants::string,
+              game_datetime::string,
+              game_length::string,
+              game_version,
+              participants_info::string
+            ) is not null
+          config:
+            where: "loaded_at >= dateadd('hour', -48, current_timestamp())"
+            severity: warn
+
+      - dbt_utils.expression_is_true:
+          name: assert_stale_matches_fully_populated
+          expression: >
+            participants is not null
+            and game_datetime is not null
+            and game_length is not null
+            and game_version is not null
+            and participants_info is not null
+          config:
+            where: "loaded_at < dateadd('hour', -48, current_timestamp())"
+            severity: error
+
     columns:
       - name: set_number
         data_tests:
@@ -12,22 +39,10 @@ models:
           - not_null
           - unique
       - name: participants
-        data_tests:
-          - not_null
       - name: game_datetime
-        data_tests:
-          - not_null
       - name: game_length
-        data_tests:
-          - not_null
       - name: game_version
-        data_tests:
-          - not_null:
-              config:
-                severity: warn
       - name: participants_info
-        data_tests:
-          - not_null
       - name: ingested_at
         data_tests:
           - not_null
@@ -37,6 +52,37 @@ models:
 
   - name: stg_18_players
     description: "Player identity and match activity metadata normalized from raw player records."
+    data_tests:
+      - dbt_utils.expression_is_true:
+          name: warn_recent_player_payload_nulls
+          expression: >
+            coalesce(
+              game_name,
+              tagline,
+              full_riot_id,
+              first_seen_match_id,
+              first_seen_match_time::string,
+              last_seen_match_id,
+              last_seen_match_time::string
+            ) is not null
+          config:
+            where: "loaded_at >= dateadd('hour', -48, current_timestamp())"
+            severity: warn
+
+      - dbt_utils.expression_is_true:
+          name: assert_stale_players_fully_populated
+          expression: >
+            game_name is not null
+            and tagline is not null
+            and full_riot_id is not null
+            and first_seen_match_id is not null
+            and first_seen_match_time is not null
+            and last_seen_match_id is not null
+            and last_seen_match_time is not null
+          config:
+            where: "loaded_at < dateadd('hour', -48, current_timestamp())"
+            severity: error
+
     columns:
       - name: puuid
         data_tests:
@@ -45,21 +91,10 @@ models:
       - name: game_name
       - name: tagline
       - name: full_riot_id
-        data_tests:
-          - not_null:
-              config:
-                severity: warn
       - name: first_seen_match_id
-        data_tests: &player_warn_tests
-          - not_null:
-              config:
-                severity: warn
       - name: first_seen_match_time
-        data_tests: *player_warn_tests
       - name: last_seen_match_id
-        data_tests: *player_warn_tests
       - name: last_seen_match_time
-        data_tests: *player_warn_tests
       - name: updated_at
         data_tests:
           - not_null

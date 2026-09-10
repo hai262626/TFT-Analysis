@@ -26,4 +26,14 @@ select_appropriate_columns AS (
     WHERE raw_payload:info:tft_set_number::STRING = '18'
 )
 
-SELECT * FROM select_appropriate_columns
+SELECT
+    set_number,
+    match_id,
+    participants,
+    game_datetime,
+    game_length,
+    game_version,
+    participants_info,
+    ingested_at,
+    loaded_at
+FROM select_appropriate_columns

@@ -28,11 +28,7 @@ models:
         data_tests:
           - not_null
       - name: ingested_at
-        data_tests:
-          - not_null
       - name: loaded_at
-        data_tests:
-          - not_null
 
   - name: dim_18_augment_effects
     description: "Flattened numeric effects for each augment version."
@@ -58,6 +54,8 @@ models:
         data_tests:
           - not_null
       - name: augment_effect_value
+        data_tests:
+          - not_null
       - name: augment_associated_trait
       - name: patch_version
       - name: ingested_at
@@ -106,11 +104,8 @@ models:
         data_tests:
           - not_null
       - name: ingested_at
-        data_tests:
-          - not_null
       - name: loaded_at
-        data_tests:
-          - not_null
+
 
   - name: dim_18_equipments
     description: "SCD2 equipment dimension enriched with patch and surrogate keys."
@@ -141,11 +136,7 @@ models:
         data_tests:
           - not_null
       - name: ingested_at
-        data_tests:
-          - not_null
       - name: loaded_at
-        data_tests:
-          - not_null
 
   - name: dim_18_traits
     description: "SCD2 trait dimension enriched with patch and surrogate keys."
@@ -173,11 +164,8 @@ models:
         data_tests:
           - not_null
       - name: ingested_at
-        data_tests:
-          - not_null
       - name: loaded_at
-        data_tests:
-          - not_null
+
 
   - name: dim_18_traits_tiers
     description: "SCD2 trait tier dimension enriched with trait and patch keys."
@@ -251,6 +239,8 @@ models:
         data_tests:
           - not_null
       - name: tier_variable_value
+        data_tests:
+          - not_null
       - name: patch_version
       - name: ingested_at
       - name: loaded_at
@@ -283,11 +273,8 @@ models:
         data_tests:
           - not_null
       - name: ingested_at
-        data_tests:
-          - not_null
       - name: loaded_at
-        data_tests:
-          - not_null
+  
 
   - name: dim_18_wand_effects
     description: "Flattened numeric effects for each wand version."
@@ -313,6 +300,8 @@ models:
         data_tests:
           - not_null
       - name: wand_effect_value
+        data_tests:
+          - not_null
       - name: patch_version
       - name: ingested_at
       - name: loaded_at

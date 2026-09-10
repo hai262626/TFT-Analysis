@@ -13,6 +13,7 @@ flatten_participants AS (
     SELECT
         m.match_id,
         m.game_datetime,
+        m.participants,
 
         -- Player Identifiers
         p.value:puuid::STRING                       AS puuid,
@@ -47,6 +48,7 @@ flatten_participants AS (
 SELECT
     match_id,
     game_datetime,
+    participants,
     puuid,
     game_name,
     tagline,

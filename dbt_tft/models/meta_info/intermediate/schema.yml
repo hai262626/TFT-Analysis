@@ -17,6 +17,9 @@ models:
 
   - name: int_18_equipments
     description: "Normalized equipment metadata with component identifiers and names."
+    data_tests:
+      - dbt_utils.expression_is_true:
+          expression: "(equipment_name = 'CompleteItem' AND component_1 IS NOT NULL AND component_2 IS NOT NULL) OR equipment_name != 'CompleteItem'"
     columns:
       - name: equipment_id
         data_tests:
@@ -47,11 +50,19 @@ models:
   - name: int_18_traits_tiers
     description: "One row per trait tier, including a default tier for traits without configured effects."
     data_tests:
-      # Test quan trọng nhất: Chặn rách grain / duplicate dòng sau khi FLATTEN mốc kích hoạt
+      # Most important test: Prevent grain breaks / duplicate rows after flattening activation thresholds
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
             - trait_id
             - tier_id
+      - dbt_utils.expression_is_true:
+          expression: "min_units <= max_units OR min_units IS NULL OR max_units IS NULL"
+      - dbt_utils.expression_is_true:
+          expression: "tier_level = 0 OR (min_units > 0 AND max_units > 0) OR min_units IS NULL OR max_units IS NULL"
+      - dbt_utils.expression_is_true:
+          expression: "max_units <= 25000 OR max_units IS NULL"
+      - dbt_utils.expression_is_true:
+          expression: "(tier_level = 0 AND tier_variables IS NULL) OR (tier_level > 0 AND tier_variables IS NOT NULL) OR tier_level IS NULL"
     columns:
       - name: trait_id
         data_tests:
@@ -68,9 +79,15 @@ models:
           - not_null:
               config:
                 severity: warn 
-                warn_if: ">= 0"
+                warn_if: "> 0"
                 error_if: ">= 10"
       - name: max_units
+        data_tests:
+          - not_null:
+              config:
+                severity: warn 
+                warn_if: "> 0"
+                error_if: ">= 10"
       - name: style
       - name: tier_variables
       - name: ingested_at
@@ -87,6 +104,6 @@ models:
       - name: wand_description
       - name: wand_effects
         data_tests:
-          - not_null  # Bắt buộc giữ: Xác nhận UDF Python không trả ra null object
+          - not_null  # Must be kept: Verify that the Python UDF does not return a null object
       - name: ingested_at
       - name: loaded_at
