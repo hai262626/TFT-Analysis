@@ -22,16 +22,16 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+seeds:
+  dbt_tft:
+    +schema: seeds
+
+snapshots:
+  dbt_tft:
+    +schema: snapshots
 
 models:
-  dbt_tft:
-    seeds:
-      +schema: seeds
-      +materialized: table
-    snapshots:
-      +schema: snapshots
-      +materialized: table
-    models:
+    dbt_tft:
       meta_info:
         staging:
           +schema: staging_info
