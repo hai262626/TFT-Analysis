@@ -33,10 +33,65 @@ add_patch_version AS (
 
 hashing_trait_id AS (
     SELECT
-        *,
         md5(CONCAT(trait_id, '_', dbt_valid_from)) AS trait_version_sk,
-        md5(trait_id)                              AS trait_sk
+        md5(trait_id)                              AS trait_sk,
+        set_number,
+        trait_id,
+        trait_name,
+        trait_description,
+        patch_version,
+        dbt_valid_from,
+        dbt_valid_to,
+        ingested_at,
+        loaded_at
     FROM add_patch_version
+),
+
+add_tier_zero AS (
+    SELECT
+        '-1'                                           AS trait_version_sk,
+        '-1'                                           AS trait_sk,
+        0                                              AS set_number,
+        'Unknown'                                      AS trait_id,
+        'Unknown'                                      AS trait_name,
+        'Unknown'                                      AS trait_description,
+        'Unknown'                                      AS patch_version,
+        '1900-01-01 00:00:00.000000'::TIMESTAMP_NTZ    AS dbt_valid_from,
+        '9999-12-31 23:59:59.999999'::TIMESTAMP_NTZ    AS dbt_valid_to,
+        '1900-01-01 00:00:00.000000'::TIMESTAMP_NTZ    AS ingested_at,
+        '1900-01-01 00:00:00.000000'::TIMESTAMP_NTZ    AS loaded_at
+),
+
+union_all_traits AS (
+    SELECT
+        trait_version_sk,
+        trait_sk,
+        set_number,
+        trait_id,
+        trait_name,
+        trait_description,
+        patch_version,
+        dbt_valid_from,
+        dbt_valid_to,
+        ingested_at,
+        loaded_at
+    FROM hashing_trait_id
+
+    UNION ALL
+
+    SELECT
+        trait_version_sk,
+        trait_sk,
+        set_number,
+        trait_id,
+        trait_name,
+        trait_description,
+        patch_version,
+        dbt_valid_from,
+        dbt_valid_to,
+        ingested_at,
+        loaded_at
+    FROM add_tier_zero
 )
 
 SELECT
@@ -51,4 +106,4 @@ SELECT
     dbt_valid_to,
     ingested_at,
     loaded_at
-FROM hashing_trait_id
+FROM union_all_traits

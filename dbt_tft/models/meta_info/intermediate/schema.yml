@@ -65,7 +65,11 @@ models:
       - name: tier_level
       - name: min_units
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn 
+                warn_if: ">= 0"
+                error_if: ">= 10"
       - name: max_units
       - name: style
       - name: tier_variables
