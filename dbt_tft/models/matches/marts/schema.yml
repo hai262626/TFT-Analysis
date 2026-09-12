@@ -138,7 +138,7 @@ models:
       - name: ingested_at
       - name: loaded_at
 
-  - name: fct_18_partcipant_units
+  - name: fct_18_participant_units
     description: "Incremental participant unit fact table enriched with champion keys."
     columns:
       - name: match_id
