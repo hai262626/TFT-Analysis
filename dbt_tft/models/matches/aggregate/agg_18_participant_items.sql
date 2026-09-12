@@ -11,7 +11,6 @@ WITH base_participant_items AS (
         champion_id,
         placement,
         equipment_sk,
-        equipment_version_sk,
         equipment_id,
         patch_version
     FROM {{ ref('fct_18_participant_items') }}
@@ -35,7 +34,6 @@ unique_player_equipment_outcomes AS (
     SELECT DISTINCT
         patch_version,
         equipment_sk,
-        equipment_version_sk,
         equipment_id,
         participant_id,
         match_id,
@@ -83,7 +81,6 @@ item_aggregations AS (
     SELECT
         u.patch_version,
         u.equipment_sk,
-        u.equipment_version_sk,
         u.equipment_id,
 
         -- Adoption
@@ -106,7 +103,6 @@ item_aggregations AS (
     GROUP BY 
         u.patch_version,
         u.equipment_sk,
-        u.equipment_version_sk,
         u.equipment_id
     -- Minimum sample size threshold to eliminate statistical noise
     HAVING COUNT(DISTINCT u.participant_id) >= 30
@@ -117,7 +113,6 @@ calculate_metrics_and_enrich AS (
     SELECT
         agg.patch_version,
         agg.equipment_sk,
-        agg.equipment_version_sk,
         agg.equipment_id,
         de.equipment_name,
 
@@ -167,7 +162,6 @@ calculate_metrics_and_enrich AS (
        AND agg.equipment_id = c5.equipment_id
     LEFT JOIN {{ ref('dim_18_equipments') }} de
         ON agg.equipment_sk = de.equipment_sk
-       AND agg.patch_version = de.patch_version
 ),
 
 -- 7. STATISTICAL DISTRIBUTION: Calculate Mean (μ) and Population StdDev (σ) across all items per patch
@@ -199,7 +193,6 @@ calculate_z_scores AS (
     SELECT
         c.patch_version,
         c.equipment_sk,
-        c.equipment_version_sk,
         c.equipment_id,
         c.equipment_name,
         c.top_1_champ,
@@ -259,7 +252,6 @@ calculate_patch_deltas AS (
         END AS tier_label,
 
         z.equipment_sk,
-        z.equipment_version_sk,
         z.equipment_name,
         z.top_1_champ,
         z.top_2_champ,
@@ -358,7 +350,6 @@ SELECT
     item_tier_rank,
     tier_label,
     equipment_sk,
-    equipment_version_sk,
     equipment_id,
     equipment_name,
 

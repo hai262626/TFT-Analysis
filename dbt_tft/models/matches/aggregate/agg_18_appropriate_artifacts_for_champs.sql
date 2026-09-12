@@ -13,10 +13,9 @@ WITH base_participant_artifacts AS (
         fpi.equipment_id,
         fpi.patch_version
     FROM {{ ref('fct_18_participant_items') }} fpi
-    -- BUSINESS JOIN: Filter strictly for Artifact items cataloged in the active patch
+    -- BUSINESS JOIN: Filter strictly for Artifact items via static dimension catalog
     INNER JOIN {{ ref('dim_18_equipments') }} de
-        ON fpi.equipment_id = de.equipment_id
-       AND fpi.patch_version = de.patch_version
+        ON fpi.equipment_sk = de.equipment_sk
        AND de.item_category = 'Artifact'
     WHERE fpi.equipment_id IS NOT NULL 
       AND fpi.equipment_sk != '-1'

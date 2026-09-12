@@ -31,11 +31,10 @@ patch_benchmarks AS (
     GROUP BY patch_version
 ),
 
--- 2. Extract offensive component weights from dimensional catalog
+-- 2. Extract offensive component weights from dimensional static catalog (CSV Seed)
 equipment_scoring AS (
     SELECT
         equipment_id,
-        patch_version,
         (
             CASE 
                 WHEN component_1 ILIKE ANY ('%BFSword%', '%NeedlesslyLargeRod%', '%RecurveBow%', '%SparringGloves%', '%TearOfTheGoddess%') THEN 1 
@@ -47,7 +46,6 @@ equipment_scoring AS (
             END
         ) AS offensive_components_count
     FROM {{ ref('dim_18_equipments') }}
-    WHERE equipment_sk != '-1'
 ),
 
 -- 3. Explode item arrays in an isolated CTE to avoid Snowflake lateral join-side limitations
@@ -57,7 +55,6 @@ unit_items_exploded AS (
         ub.puuid,
         ub.champion_id,
         ub.unit_index,
-        ub.patch_version,
         itm.value::STRING AS item_id
     FROM units_base ub,
     TABLE(FLATTEN(input => ub.sorted_items)) itm
@@ -74,7 +71,6 @@ unit_item_offensive_score AS (
     FROM unit_items_exploded uie
     LEFT JOIN equipment_scoring eq
         ON uie.item_id = eq.equipment_id
-        AND uie.patch_version = eq.patch_version
     GROUP BY 
         uie.match_id, 
         uie.puuid, 
@@ -181,13 +177,13 @@ comp_raw_aggregates AS (
         pct.comp_key,
         pct.primary_trait,
         pct.main_carry,
-        MAX(pct.main_carry_rarity)                         AS main_carry_rarity,
-        ROUND(AVG(pct.end_level), 2)                       AS avg_end_level,
-        COUNT(DISTINCT pct.participant_id)                 AS unique_players_picked,
-        COUNT(DISTINCT pct.match_id)                       AS unique_matches_picked,
-        ROUND(AVG(pct.placement), 4)                       AS avg_placement,
-        COUNT(CASE WHEN pct.placement <= 4 THEN 1 END)     AS top4_count,
-        COUNT(CASE WHEN pct.placement = 1 THEN 1 END)      AS win_count,
+        MAX(pct.main_carry_rarity)                                         AS main_carry_rarity,
+        ROUND(AVG(pct.end_level), 2)                                       AS avg_end_level,
+        COUNT(DISTINCT pct.participant_id)                                 AS unique_players_picked,
+        COUNT(DISTINCT pct.match_id)                                       AS unique_matches_picked,
+        ROUND(AVG(pct.placement), 4)                                       AS avg_placement,
+        COUNT(CASE WHEN pct.placement <= 4 THEN 1 END)                     AS top4_count,
+        COUNT(CASE WHEN pct.placement = 1 THEN 1 END)                      AS win_count,
 
         -- Standardized Popularity Rates matching Items Mart Schema
         ROUND(

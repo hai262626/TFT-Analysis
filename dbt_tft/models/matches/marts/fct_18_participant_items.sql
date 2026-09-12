@@ -61,7 +61,6 @@ join_dimensions AS (
         apv.champion_id,
         apv.item_index,
         COALESCE(de.equipment_sk, '-1')    AS equipment_sk,
-        COALESCE(de.equipment_version_sk, '-1')        AS equipment_version_sk,
         apv.equipment_id,
         apv.patch_version,
         apv.ingested_at,
@@ -77,7 +76,6 @@ join_dimensions AS (
         AND apv.patch_version = dc.patch_version
     LEFT JOIN {{ ref('dim_18_equipments') }} de
         ON apv.equipment_id = de.equipment_id
-        AND apv.patch_version = de.patch_version
 )
 
 SELECT
@@ -90,7 +88,6 @@ SELECT
     champion_sk,
     champion_id,
     item_index,
-    equipment_version_sk,
     equipment_sk,
     equipment_id,
     patch_version,

@@ -119,22 +119,16 @@ models:
       - name: item_index
         data_tests:
           - not_null
-      - name: equipment_version_sk
+      - name: equipment_sk
         data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_18_equipments')
-                field: equipment_version_sk
-      - name: equipment_sk
-        data_tests:
-          - not_null
+                field: equipment_sk
       - name: equipment_id
         data_tests:
           - not_null      
-      - name: patch_version
-        data_tests:
-          - not_null
       - name: ingested_at
       - name: loaded_at
 

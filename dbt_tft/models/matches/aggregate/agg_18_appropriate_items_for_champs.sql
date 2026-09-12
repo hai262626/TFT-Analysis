@@ -8,28 +8,17 @@ WITH base_units AS (
         fpu.match_id,
         fpu.puuid,
         fpu.match_id || '_' || fpu.puuid AS participant_id,
-        fpu.game_datetime,
         fpu.placement,
         fpu.champion_id,
-        fpu.sorted_items
+        fpu.sorted_items,
+        fpu.patch_version
     FROM {{ ref('fct_18_participant_units') }} fpu
-    -- 1. Filter strictly for fully itemized carries with exactly 3 items
+    -- 1. Filter strictly for fully itemized carries with exactly 3 items and valid patch
     WHERE ARRAY_SIZE(fpu.sorted_items) = 3
+      AND fpu.patch_version != 'Unknown'
 ),
 
--- 2. Associate each record with the active TFT patch release window
-add_patch_version AS (
-    SELECT
-        b.*,
-        COALESCE(p.patch_version, 'Unknown') AS patch_version
-    FROM base_units b
-    LEFT JOIN {{ ref('tft_patch_version') }} p
-        ON b.game_datetime >= p.patch_release_utc
-       AND b.game_datetime < p.patch_end_utc
-    WHERE COALESCE(p.patch_version, 'Unknown') != 'Unknown'
-),
-
--- 3. Extract item signatures directly from the pre-sorted array
+-- 2. Extract item signatures directly from the pre-sorted array
 extract_trio_signatures AS (
     SELECT
         patch_version,
@@ -43,10 +32,10 @@ extract_trio_signatures AS (
         sorted_items[0]::STRING              AS item_1,
         sorted_items[1]::STRING              AS item_2,
         sorted_items[2]::STRING              AS item_3
-    FROM add_patch_version
+    FROM base_units
 ),
 
--- 4. Benchmark denominators: Total unique 3-item games and matches per champion within the patch
+-- 3. Benchmark denominators: Total unique 3-item games and matches per champion within the patch
 champion_3item_benchmarks AS (
     SELECT
         patch_version,
@@ -59,7 +48,7 @@ champion_3item_benchmarks AS (
         champion_id
 ),
 
--- 5. Empirical performance aggregations per 3-item combination
+-- 4. Empirical performance aggregations per 3-item combination
 trio_raw_aggregates AS (
     SELECT
         t.patch_version,
@@ -114,7 +103,7 @@ trio_raw_aggregates AS (
     HAVING COUNT(DISTINCT t.participant_id) >= 10
 ),
 
--- 6. STATISTICAL DISTRIBUTION: Calculate Mean (μ) and Population StdDev (σ) per (patch_version, champion_id)
+-- 5. STATISTICAL DISTRIBUTION: Calculate Mean (μ) and Population StdDev (σ) per (patch_version, champion_id)
 champion_trio_distribution AS (
     SELECT
         patch_version,
@@ -141,7 +130,7 @@ champion_trio_distribution AS (
         champion_id
 ),
 
--- 7. Standardized Gaussian Z-Scores & Weighted 40-30-20-10 Composite Scoring
+-- 6. Standardized Gaussian Z-Scores & Weighted 40-30-20-10 Composite Scoring
 calculate_z_scores AS (
     SELECT
         r.patch_version,
@@ -182,7 +171,7 @@ calculate_z_scores AS (
        AND r.champion_id = d.champion_id
 ),
 
--- 8. Rank assignments and tier categorization per champion
+-- 7. Rank assignments and tier categorization per champion
 ranked_trios AS (
     SELECT
         z.patch_version,

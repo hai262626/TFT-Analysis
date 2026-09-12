@@ -110,10 +110,6 @@ models:
   - name: dim_18_equipments
     description: "SCD2 equipment dimension enriched with patch and surrogate keys."
     columns:
-      - name: equipment_version_sk
-        data_tests:
-          - not_null
-          - unique
       - name: equipment_sk
         data_tests:
           - not_null
@@ -126,17 +122,10 @@ models:
       - name: component_1_name
       - name: component_2
       - name: component_2_name
-      - name: patch_version
-        data_tests:
-          - not_null
-      - name: dbt_valid_from
-        data_tests:
-          - not_null
-      - name: dbt_valid_to
-        data_tests:
-          - not_null
       - name: ingested_at
       - name: loaded_at
+      - name: equipment_stats
+      - name: equipment_effects
 
   - name: dim_18_traits
     description: "SCD2 trait dimension enriched with patch and surrogate keys."

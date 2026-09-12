@@ -21,3 +21,20 @@ seeds:
         description: "The UTC timestamp when the patch ended"
         tests:
           - not_null
+    
+  - name: tft_equipments
+    description: "Seed data for TFT items"
+    columns:
+      - name: id
+        data_tests:
+          - not_null
+          - unique
+      - name: name
+        data_tests:
+          - not_null
+      - name: category
+        data_tests:
+          - not_null
+      - name: stats
+      - name: effects
+        
