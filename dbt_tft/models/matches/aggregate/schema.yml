@@ -1,0 +1,653 @@
+version: 2
+
+models:
+  - name: agg_18_appropriate_artifacts_for_champs
+    description: "Top three artifacts by champion and patch based on empirical composite z-score."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - patch_version
+              - champion_id
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_games_with_artifacts > 0"
+    columns:
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: champion_id
+        data_tests:
+          - not_null
+      - name: total_games_with_artifacts
+        data_tests:
+          - not_null
+      - name: top_1_artifact
+      - name: top_2_artifact
+      - name: top_3_artifact
+
+  - name: agg_18_appropriate_items_for_champs
+    description: "Top three-item combinations per champion and patch evaluated via standardized Gaussian Z-Scores."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - patch_version
+              - champion_id
+              - trio_signature
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "avg_placement >= 1.0 AND avg_placement <= 8.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "top4_rate_pct >= 0.0 AND top4_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "win_rate_pct >= 0.0 AND win_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "player_popularity_pct >= 0.0 AND player_popularity_pct <= 100.0"
+    columns:
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: champion_id
+        data_tests:
+          - not_null
+      - name: trio_tier_rank
+        data_tests:
+          - not_null
+      - name: tier_label
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['S-Tier', 'A-Tier', 'B-Tier', 'C-Tier']
+      - name: trio_signature
+        data_tests:
+          - not_null
+      - name: item_1
+        data_tests:
+          - not_null
+      - name: item_2
+        data_tests:
+          - not_null
+      - name: item_3
+        data_tests:
+          - not_null
+      - name: composite_z_score
+      - name: player_popularity_pct
+      - name: match_popularity_pct
+      - name: avg_placement
+      - name: top4_rate_pct
+      - name: win_rate_pct
+      - name: z_placement
+      - name: z_top4
+      - name: z_win
+      - name: z_popularity
+      - name: unique_players_picked
+        data_tests:
+          - not_null
+      - name: unique_matches_picked
+      - name: total_3item_matches
+      - name: total_3item_participants
+
+  - name: agg_18_competitive_comps
+    description: "Composition performance split by contested and uncontested lobbies to identify rank deterioration penalties."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - patch_version
+              - comp_key
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_picks = (uncontested_picks + contested_picks)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "overall_avg_placement >= 1.0 AND overall_avg_placement <= 8.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "uncontested_avg_placement >= 1.0 AND uncontested_avg_placement <= 8.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "contested_avg_placement >= 1.0 AND contested_avg_placement <= 8.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "contested_rate_pct >= 0.0 AND contested_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "ROUND(contested_placement_penalty, 1) = ROUND(contested_avg_placement - uncontested_avg_placement, 1)"
+    columns:
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: comp_key
+        data_tests:
+          - not_null
+      - name: primary_trait
+      - name: main_carry
+      - name: main_carry_rarity
+      - name: total_picks
+        data_tests:
+          - not_null
+      - name: total_matches_present
+      - name: uncontested_picks
+        data_tests:
+          - not_null
+      - name: contested_picks
+        data_tests:
+          - not_null
+      - name: contested_rate_pct
+      - name: overall_avg_placement
+      - name: uncontested_avg_placement
+      - name: contested_avg_placement
+      - name: contested_placement_penalty
+      - name: overall_top4_rate_pct
+      - name: uncontested_top4_rate_pct
+      - name: contested_top4_rate_pct
+      - name: contested_top4_delta_pct
+      - name: overall_win_rate_pct
+      - name: uncontested_win_rate_pct
+      - name: contested_win_rate_pct
+      - name: contested_win_delta_pct
+
+  - name: agg_18_int_defining_comps
+    description: "Intermediate spine model isolating one composition and primary carry profile per participant match record."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - participant_id
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "placement >= 1 AND placement <= 8"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "end_level >= 1 AND end_level <= 11"
+    columns:
+      - name: participant_id
+        data_tests:
+          - not_null
+      - name: match_id
+        data_tests:
+          - not_null
+      - name: puuid
+        data_tests:
+          - not_null
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: placement
+        data_tests:
+          - not_null
+      - name: end_level
+        data_tests:
+          - not_null
+      - name: comp_key
+        data_tests:
+          - not_null
+      - name: primary_trait
+      - name: main_carry
+      - name: main_carry_sk
+      - name: main_carry_tier
+      - name: main_carry_rarity
+      - name: secondary_core
+      - name: secondary_core_sk
+      - name: secondary_core_tier
+      - name: secondary_core_rarity
+
+  - name: agg_18_is_worth_to_roll_3_stars
+    description: "Reroll efficiency, upgrade conversion rates, and 3-star vs 2-star ROI across low-to-mid cost champions."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - patch_version
+              - champion_id
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "unit_rarity IN (0, 1, 2)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "avg_placement_3star >= 1.0 AND avg_placement_3star <= 8.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "upgrade_conversion_rate_pct >= 0.0 AND upgrade_conversion_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "top4_rate_3star >= 0.0 AND top4_rate_3star <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "win_rate_3star >= 0.0 AND win_rate_3star <= 100.0"
+    columns:
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: reroll_tier_rank
+        data_tests:
+          - not_null
+      - name: tier_label
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['S-Tier', 'A-Tier', 'B-Tier', 'C-Tier']
+      - name: champion_id
+        data_tests:
+          - not_null
+      - name: champion_sk
+      - name: unit_rarity
+        data_tests:
+          - not_null
+      - name: reroll_archetype
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Primary Reroll Carry'
+                  - 'Bait / Low ROI Reroll'
+                  - 'High Ceiling / Situational 3-Star'
+                  - 'Trait Bot / 2-Star Placeholder'
+      - name: composite_z_score
+      - name: upgrade_conversion_rate_pct
+      - name: avg_placement_3star
+      - name: top4_rate_3star
+      - name: win_rate_3star
+      - name: z_placement
+      - name: z_top4
+      - name: z_win
+      - name: z_popularity
+      - name: delta_top4_rate
+      - name: delta_win_rate
+      - name: count_3star
+      - name: count_2star
+      - name: top4_rate_2star
+      - name: win_rate_2star
+      - name: total_appearances
+        data_tests:
+          - not_null
+
+  - name: agg_18_meta_champs
+    description: "Champion meta performance, leaderboard rankings, and patch-over-patch deltas."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - patch_version
+              - champion_id
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "avg_placement >= 1.0 AND avg_placement <= 8.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "top4_rate_pct >= 0.0 AND top4_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "win_rate_pct >= 0.0 AND win_rate_pct <= 100.0"
+    columns:
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: champion_rank
+        data_tests:
+          - not_null
+      - name: tier_label
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['S-Tier', 'A-Tier', 'B-Tier', 'C-Tier']
+      - name: champion_id
+        data_tests:
+          - not_null
+      - name: champion_sk
+      - name: champion_version_sk
+      - name: unit_rarity
+        data_tests:
+          - not_null
+      - name: composite_z_score
+      - name: player_popularity_pct
+      - name: match_popularity_pct
+      - name: avg_placement
+      - name: top4_rate_pct
+      - name: win_rate_pct
+      - name: z_placement
+      - name: z_top4
+      - name: z_win
+      - name: z_popularity
+      - name: prev_composite_z_score
+      - name: delta_composite_z_score
+      - name: prev_player_popularity_pct
+      - name: delta_player_popularity_pct
+      - name: prev_match_popularity_pct
+      - name: delta_match_popularity_pct
+      - name: prev_avg_placement
+      - name: delta_avg_placement
+      - name: prev_top4_rate_pct
+      - name: delta_top4_rate_pct
+      - name: prev_win_rate_pct
+      - name: delta_win_rate_pct
+      - name: unique_players_picked
+        data_tests:
+          - not_null
+      - name: unique_matches_picked
+      - name: total_matches
+      - name: total_participants
+
+  - name: agg_18_meta_comps
+    description: "Composition tier rankings, archetypes, and exemplar board unit payloads by patch."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - patch_version
+              - comp_key
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "avg_placement >= 1.0 AND avg_placement <= 8.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "top4_rate_pct >= 0.0 AND top4_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "win_rate_pct >= 0.0 AND win_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "avg_end_level >= 1.0 AND avg_end_level <= 11.0"
+    columns:
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: comp_tier_rank
+        data_tests:
+          - not_null
+      - name: tier_label
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['S-Tier', 'A-Tier', 'B-Tier', 'C-Tier']
+      - name: comp_archetype
+        data_tests:
+          - not_null
+      - name: comp_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('agg_18_int_defining_comps')
+                field: comp_key
+      - name: primary_trait
+      - name: main_carry
+      - name: avg_end_level
+      - name: composite_z_score
+      - name: player_popularity_pct
+      - name: match_popularity_pct
+      - name: avg_placement
+      - name: top4_rate_pct
+      - name: win_rate_pct
+      - name: z_placement
+      - name: z_top4
+      - name: z_win
+      - name: z_popularity
+      - name: unique_players_picked
+        data_tests:
+          - not_null
+      - name: unique_matches_picked
+      - name: total_matches
+      - name: total_participants
+      - name: exemplar_board_units
+        data_tests:
+          - not_null
+
+  - name: agg_18_meta_equipments
+    description: "Equipment meta performance, top 5 champ users, duplicate craft ratios, and patch deltas."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - patch_version
+              - equipment_id
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "avg_placement >= 1.0 AND avg_placement <= 8.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "top4_rate_pct >= 0.0 AND top4_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "win_rate_pct >= 0.0 AND win_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "duplicate_craft_ratio >= 1.0"
+    columns:
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: item_tier_rank
+        data_tests:
+          - not_null
+      - name: tier_label
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['S-Tier', 'A-Tier', 'B-Tier', 'C-Tier']
+      - name: equipment_sk
+      - name: equipment_id
+        data_tests:
+          - not_null
+      - name: equipment_name
+      - name: top_1_champ
+      - name: top_2_champ
+      - name: top_3_champ
+      - name: top_4_champ
+      - name: top_5_champ
+      - name: composite_z_score
+      - name: player_popularity_pct
+      - name: match_popularity_pct
+      - name: duplicate_craft_ratio
+      - name: avg_placement
+      - name: top4_rate_pct
+      - name: win_rate_pct
+      - name: z_placement
+      - name: z_top4
+      - name: z_win
+      - name: z_popularity
+      - name: prev_composite_z_score
+      - name: delta_composite_z_score
+      - name: prev_player_popularity_pct
+      - name: delta_player_popularity_pct
+      - name: prev_avg_placement
+      - name: delta_avg_placement
+      - name: prev_top4_rate_pct
+      - name: delta_top4_rate_pct
+      - name: prev_win_rate_pct
+      - name: delta_win_rate_pct
+      - name: unique_players_picked
+        data_tests:
+          - not_null
+      - name: total_items_crafted
+        data_tests:
+          - not_null
+      - name: total_matches
+      - name: total_participants
+
+  - name: agg_18_meta_traits
+    description: "Trait milestone activation performance, tier catalog metadata, and patch deltas."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - patch_version
+              - trait_id
+              - tier_current
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "avg_placement >= 1.0 AND avg_placement <= 8.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "top4_rate_pct >= 0.0 AND top4_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "win_rate_pct >= 0.0 AND win_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "tier_current <= tier_total"
+    columns:
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: trait_tier_rank
+        data_tests:
+          - not_null
+      - name: tier_label
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['S-Tier', 'A-Tier', 'B-Tier', 'C-Tier']
+      - name: trait_id
+        data_tests:
+          - not_null
+      - name: tier_id
+      - name: tier_version_sk
+      - name: tier_sk
+      - name: tier_current
+        data_tests:
+          - not_null
+      - name: tier_total
+        data_tests:
+          - not_null
+      - name: defined_min_units
+      - name: defined_max_units
+      - name: defined_style
+      - name: tier_variables
+      - name: composite_z_score
+      - name: player_popularity_pct
+      - name: match_popularity_pct
+      - name: avg_placement
+      - name: top4_rate_pct
+      - name: win_rate_pct
+      - name: z_placement
+      - name: z_top4
+      - name: z_win
+      - name: z_popularity
+      - name: prev_composite_z_score
+      - name: delta_composite_z_score
+      - name: prev_player_popularity_pct
+      - name: delta_player_popularity_pct
+      - name: prev_match_popularity_pct
+      - name: delta_match_popularity_pct
+      - name: prev_avg_placement
+      - name: delta_avg_placement
+      - name: prev_top4_rate_pct
+      - name: delta_top4_rate_pct
+      - name: prev_win_rate_pct
+      - name: delta_win_rate_pct
+      - name: unique_players_picked
+        data_tests:
+          - not_null
+      - name: unique_matches_picked
+      - name: total_matches
+      - name: total_participants
+
+  - name: agg_18_participant_performances
+    description: "Individual player leaderboard, Gaussian rank percentiles, and activity metrics per patch."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - patch_version
+              - puuid
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "avg_placement >= 1.0 AND avg_placement <= 8.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "top4_rate_pct >= 0.0 AND top4_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "win_rate_pct >= 0.0 AND win_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_games_played >= 10"
+    columns:
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: player_rank
+        data_tests:
+          - not_null
+      - name: tier_label
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['S-Tier', 'A-Tier', 'B-Tier', 'C-Tier']
+      - name: puuid
+        data_tests:
+          - not_null
+      - name: game_name
+      - name: tagline
+      - name: composite_z_score
+      - name: total_games_played
+        data_tests:
+          - not_null
+      - name: avg_placement
+      - name: top4_rate_pct
+      - name: win_rate_pct
+      - name: match_participation_pct
+      - name: z_top4
+      - name: z_placement
+      - name: z_win
+      - name: z_activity
+
+  - name: agg_18_reroll_or_level_up_is_better
+    description: "Macro-level operational playstyle comparison between Fast 8/9 Level-Up and Low-Cost Reroll."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - patch_version
+              - macro_archetype
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "avg_placement >= 1.0 AND avg_placement <= 8.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "top4_rate_pct >= 0.0 AND top4_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "win_rate_pct >= 0.0 AND win_rate_pct <= 100.0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_viable_comps >= s_tier_comps_count"
+    columns:
+      - name: patch_version
+        data_tests:
+          - not_null
+      - name: macro_archetype
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Fast 8/9 Standard (4-5 Cost)'
+                  - 'Reroll Strategy (1-2-3 Cost)'
+      - name: total_viable_comps
+        data_tests:
+          - not_null
+      - name: s_tier_comps_count
+      - name: top_tier_comps_count
+      - name: unique_players_picked
+        data_tests:
+          - not_null
+      - name: unique_matches_picked
+      - name: player_popularity_pct
+      - name: match_popularity_pct
+      - name: avg_placement
+      - name: top4_rate_pct
+      - name: win_rate_pct
